@@ -1,0 +1,77 @@
+name: "AzAutomationModule "
+branding:
+  icon: "terminal"
+  color: "blue"
+description: "Imports a PowerShell-based GitHub Repo module into Azure Automation"
+inputs:
+  module-name:
+    description: "The name of the module that this action imports. Defaults to the repository name."
+    required: false
+  module-uri:
+    description: "The url to a module zip package. Defaults to GitHub's branch zip."
+    required: false
+  module-version:
+    description: "Specifies the version of the module to which this action updates Automation. If no version is specified and it's required, the action will attempt to figure it out."
+    required: false
+  resource-group-name:
+    description: "Specifies the name of a resource group for which this action imports the module."
+    required: true
+  automation-account-name:
+    description: "The name of the Automation account for which this action imports the module"
+    required: true
+  default-profile:
+    description: "The credentials, account, tenant, and subscription used for communication with Azure."
+    required: false
+  verbose:
+    description: "Show verbose output. Defaults to true."
+    required: true
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - id: module
+      shell: pwsh
+      run: |
+        if ("${{ inputs.verbose }}" -eq $true) {
+          $VerbosePreference = "Continue"
+        }
+
+        $branch = "${{ $GITHUB_REF_NAME }}"
+        $branch | Write-Output
+        $resourcegroup = "${{ inputs.resource-group-name }}"
+        $account = "${{ inputs.automation-account-name }}"
+
+        if (-not "${{ inputs.module-name }}") {
+          $modulename = "${{ $GITHUB_REPOSITORY }}" -split "/" | Select-Object -Last 1
+        } else {
+          $modulename = "${{ inputs.module-name }}"
+        }
+
+        if (-not "${{ inputs.module-uri }}") {
+          $moduleuri = "https://github.com/${{ $GITHUB_REPOSITORY }}/archive/refs/heads/$branch.zip"
+        } else {
+          $moduleuri = "${{ inputs.module-uri }}"
+        }
+
+        $moduleinstance = Get-AzAutomationModule -Name $modulename -ErrorAction Ignore
+
+        $parms = @{
+          Name                  = $modulename
+          ContentLinkUri        = $moduleuri
+          ResourceGroupName     = $resourcegroup
+          AutomationAccountName = $account
+        }
+
+        if ("${{ inputs.default-profile }}") {
+          $parms.DefaultProfile = "${{ inputs.default-profile }}"
+        }
+
+        if ("${{ inputs.module-version }}") {
+          $parms.ContentLinkVersion = "${{ inputs.module-version }}"
+        }
+
+        if (-not $moduleinstance) {
+          New-AzAutomationModule @parms -WhatIf
+        } else {
+          Set-AzAutomationModule @parms -WhatIf
+        }
