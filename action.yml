@@ -57,14 +57,15 @@ runs:
           $moduleuri = "${{ inputs.module-uri }}"
         }
 
-        $moduleinstance = Get-AzAutomationModule -Name $modulename -ErrorAction Ignore
-
         $parms = @{
           Name                  = $modulename
-          ContentLinkUri        = $moduleuri
           ResourceGroupName     = $resourcegroup
           AutomationAccountName = $account
         }
+
+        $moduleinstance = Get-AzAutomationModule @parms -ErrorAction Ignore
+
+        $parms.ContentLinkUri = $moduleuri
 
         if ("${{ inputs.default-profile }}") {
           $parms.DefaultProfile = "${{ inputs.default-profile }}"
