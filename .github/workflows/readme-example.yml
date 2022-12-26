@@ -3,13 +3,13 @@ name: Add PowerShell module to Azure Automation
 on:
   workflow_dispatch:
 jobs:
-  backup:
+  addmodule:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      - uses: potatoqualitee/azautomodule@main
+      - uses: ./
         id: add
         with:
           resource-group-name: tech.lgbt
