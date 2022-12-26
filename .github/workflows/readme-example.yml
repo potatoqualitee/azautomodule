@@ -9,7 +9,8 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      - uses: ./
+      - name: Add the module
+        uses: ./
         id: add
         with:
           resource-group-name: tech.lgbt
