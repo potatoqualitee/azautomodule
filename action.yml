@@ -36,19 +36,19 @@ runs:
           $VerbosePreference = "Continue"
         }
 
-        $branch = "${{ $GITHUB_REF_NAME }}"
+        $branch = $env:GITHUB_REF_NAME
         $branch | Write-Output
         $resourcegroup = "${{ inputs.resource-group-name }}"
         $account = "${{ inputs.automation-account-name }}"
 
         if (-not "${{ inputs.module-name }}") {
-          $modulename = "${{ $GITHUB_REPOSITORY }}" -split "/" | Select-Object -Last 1
+          $modulename = $env:GITHUB_REPOSITORY -split "/" | Select-Object -Last 1
         } else {
           $modulename = "${{ inputs.module-name }}"
         }
 
         if (-not "${{ inputs.module-uri }}") {
-          $moduleuri = "https://github.com/${{ $GITHUB_REPOSITORY }}/archive/refs/heads/$branch.zip"
+          $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
         } else {
           $moduleuri = "${{ inputs.module-uri }}"
         }
