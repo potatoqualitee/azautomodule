@@ -1,4 +1,4 @@
-name: "AzAutomationModule "
+name: "azautomodule"
 branding:
   icon: "terminal"
   color: "blue"
@@ -29,49 +29,96 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install and cache PowerShell modules
+      uses: potatoqualitee/psmodulecache@v5.2
+      with:
+        modules-to-cache: Az.Automation, Az.Accounts
     - id: module
       shell: pwsh
       run: |
+        # First check to see if they've logged into Azure
+        if (-not (Get-AzContext).Account) {
+          throw "Please use the Azure Login GitHub Action to login first. See the azautomodule readme for details."
+        }
+
+        # Explicit import before verbose because implicit imports are so noisy
+        Import-Module Az.Automation
+
         if ("${{ inputs.verbose }}" -eq $true) {
           $VerbosePreference = "Continue"
         }
 
-        $branch = "${{ $GITHUB_REF_NAME }}"
-        $branch | Write-Output
+        $branch = $env:GITHUB_REF_NAME
+        Write-Output "Currently in branch: $branch"
         $resourcegroup = "${{ inputs.resource-group-name }}"
         $account = "${{ inputs.automation-account-name }}"
 
         if (-not "${{ inputs.module-name }}") {
-          $modulename = "${{ $GITHUB_REPOSITORY }}" -split "/" | Select-Object -Last 1
+          $modulename = $env:GITHUB_REPOSITORY -split "/" | Select-Object -Last 1
         } else {
           $modulename = "${{ inputs.module-name }}"
         }
 
         if (-not "${{ inputs.module-uri }}") {
-          $moduleuri = "https://github.com/${{ $GITHUB_REPOSITORY }}/archive/refs/heads/$branch.zip"
+          $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
         } else {
           $moduleuri = "${{ inputs.module-uri }}"
         }
 
-        $moduleinstance = Get-AzAutomationModule -Name $modulename -ErrorAction Ignore
+        $getparms = @{
+          Name                  = $modulename
+          ResourceGroupName     = $resourcegroup
+          AutomationAccountName = $account
+          ErrorAction           = "Ignore"
+        }
+
+        Get-AzAutomationModule @getparms -OutVariable moduleinstance
+
+
+        if ($moduleinstance.ProvisioningState -eq "Creating") {
+          Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
+          do {
+            Start-Sleep 3
+            Write-Warning "Waiting..."
+          } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
+        }
 
         $parms = @{
           Name                  = $modulename
-          ContentLinkUri        = $moduleuri
           ResourceGroupName     = $resourcegroup
           AutomationAccountName = $account
+          ContentLinkUri        = $moduleuri
         }
 
         if ("${{ inputs.default-profile }}") {
           $parms.DefaultProfile = "${{ inputs.default-profile }}"
         }
 
-        if ("${{ inputs.module-version }}") {
-          $parms.ContentLinkVersion = "${{ inputs.module-version }}"
+        if (-not $moduleinstance) {
+          $remove = $true
+          New-AzAutomationModule @parms
+        } else {
+          if ("${{ inputs.module-version }}") {
+            $parms.ContentLinkVersion = "${{ inputs.module-version }}"
+          } else {
+            $parms.ContentLinkVersion = "2.0"
+          }
+          Set-AzAutomationModule @parms
         }
 
-        if (-not $moduleinstance) {
-          New-AzAutomationModule @parms -WhatIf
-        } else {
-          Set-AzAutomationModule @parms -WhatIf
+        # It sometimes takes a while...
+        do {
+          Start-Sleep 3
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook")
+
+        # Finish and if it's anythig other than Available, the import was not successful
+        Get-AzAutomationModule @getparms -OutVariable results
+        $state = $results.ProvisioningState
+
+        # If it was newly added
+        if ($remove) {
+          $null = $results | Remove-AzAutomationModule -Force
+        }
+        if ($state -ne "Available") {
+          throw "Provisioning failed with status $state"
         }

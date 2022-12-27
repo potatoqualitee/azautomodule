@@ -1,18 +1,22 @@
-
 name: Add PowerShell module to Azure Automation
 on:
   workflow_dispatch:
 jobs:
-  backup:
+  addmodule:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      - uses: potatoqualitee/azautomodule@main
+      - name: Login via Az module
+        uses: azure/login@v1
+        with:
+          creds: "${{ secrets.AZ_CREDENTIAL }}"
+          enable-AzPSSession: true
+
+      - name: Add the module
+        uses: ./
         id: add
         with:
-          resource-group-name: tech.lgbt
-          automation-account-name: something
-        env:
-          ACCESS_TOKEN: "${{ secrets.ACCESS_TOKEN }}"
+          resource-group-name: azautomation
+          automation-account-name: import-tester
