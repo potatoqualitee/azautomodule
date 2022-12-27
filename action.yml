@@ -68,9 +68,18 @@ runs:
           Name                  = $modulename
           ResourceGroupName     = $resourcegroup
           AutomationAccountName = $account
+          ErrorAction           = "Ignore"
         }
 
-        Get-AzAutomationModule @getparms -OutVariable moduleinstance -ErrorAction Ignore
+        Get-AzAutomationModule @getparms -OutVariable moduleinstance
+
+        if ($moduleinstance.ProvisioningState -eq "Creating") {
+          Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
+          do {
+            Start-Sleep 3
+            Write-Warning "Waiting..."
+          } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
+        }
 
         $parms = @{
           Name                  = $modulename
