@@ -105,7 +105,7 @@ runs:
 
         do {
           Start-Sleep 3
-        } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook")
 
         Get-AzAutomationModule @getparms -OutVariable results
         if ($results.ProvisioningState -ne "Available") {
