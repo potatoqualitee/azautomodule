@@ -36,6 +36,9 @@ runs:
     - id: module
       shell: pwsh
       run: |
+        if (-not (Get-AzContext).Account) {
+          throw "Please use the Azure Login GitHub Action to login first. See the azautomodule readme for details."
+        }
         Import-Module Az.Automation
 
         if ("${{ inputs.verbose }}" -eq $true) {
