@@ -86,7 +86,7 @@ runs:
         if ("${{ inputs.module-version }}") {
           $parms.ContentLinkVersion = "${{ inputs.module-version }}"
         } else {
-          $parms.ContentLinkVersion = $null
+          $parms.ContentLinkVersion = "1.0"
         }
 
         if (-not $moduleinstance) {
