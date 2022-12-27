@@ -62,15 +62,20 @@ runs:
           $moduleuri = "${{ inputs.module-uri }}"
         }
 
-        $parms = @{
+        $getparms = @{
           Name                  = $modulename
           ResourceGroupName     = $resourcegroup
           AutomationAccountName = $account
         }
 
-        $moduleinstance = Get-AzAutomationModule @parms -ErrorAction Ignore
+        $moduleinstance = Get-AzAutomationModule @getparms -ErrorAction Ignore
 
-        $parms.ContentLinkUri = $moduleuri
+        $parms = @{
+          Name                  = $modulename
+          ResourceGroupName     = $resourcegroup
+          AutomationAccountName = $account
+          ContentLinkUri        = $moduleuri
+        }
 
         if ("${{ inputs.default-profile }}") {
           $parms.DefaultProfile = "${{ inputs.default-profile }}"
@@ -84,4 +89,12 @@ runs:
           New-AzAutomationModule @parms
         } else {
           Set-AzAutomationModule @parms
+        }
+
+        while ((Get-AzAutomationModule @getparms).ProvisioningState -ne "Creating") {
+          Get-AzAutomationModule @getparms -OutVariable results
+          if ($results.ProvisioningState -eq "Failed") {
+            throw "Provisioning failed"
+          }
+          Start-Sleep 3
         }
