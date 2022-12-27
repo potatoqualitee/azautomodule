@@ -12,7 +12,7 @@ jobs:
       - name: Login via Az module
         uses: azure/login@v1
         with:
-          creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
+          creds: "${{ secrets.AZ_CREDENTIAL }}"
           enable-AzPSSession: true
 
       - name: Add the module
