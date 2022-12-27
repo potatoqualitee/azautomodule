@@ -96,14 +96,19 @@ runs:
         $gistid = Split-Path -path $gist -Leaf
 
 
-        git clone https://gist.github.com/$gistid.git
+        git config remote.origin.url "https://${{secrets.GITHUB_TOKEN}}@gist.github.com/$gistid.git"
+        git config user.name temp
+        git config user.email temp@temp.com
+        git clone "https://${{secrets.GITHUB_TOKEN}}@gist.github.com/$gistid.git"
+
 
         Copy-Item -Path $zip -Destination $gistid/
         Set-Location -Path $gistid
         git add (Split-Path -Path $zip -Leaf)
         git commit -m "added from azure automation"
-        git push origin master
+        git push origin main
 
+        return
 
         $getparms = @{
           Name                  = $modulename
