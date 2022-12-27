@@ -109,7 +109,7 @@ runs:
         # It sometimes takes a while...
         do {
           Start-Sleep 3
-        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook")
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated")
 
         # Finish and if it's anythig other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
