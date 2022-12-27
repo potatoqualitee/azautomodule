@@ -32,13 +32,15 @@ runs:
     - name: Install and cache PowerShell modules
       uses: potatoqualitee/psmodulecache@v5.2
       with:
-        modules-to-cache: Az.Automation
+        modules-to-cache: Az.Automation, Az.Accounts
     - id: module
       shell: pwsh
       run: |
         if (-not (Get-AzContext).Account) {
           throw "Please use the Azure Login GitHub Action to login first. See the azautomodule readme for details."
         }
+
+        # Import before verbose because implicit imports are so verbosey
         Import-Module Az.Automation
 
         if ("${{ inputs.verbose }}" -eq $true) {
