@@ -10,6 +10,9 @@ inputs:
   module-uri:
     description: "The url to a module zip package. Defaults to GitHub's branch zip."
     required: false
+  module-path:
+    description: "If the module is somewhere in the local directory, use the path."
+    required: false
   module-version:
     description: "Specifies the version of the module to which this action updates Automation. If no version is specified and it's required, the action will attempt to figure it out."
     required: false
@@ -59,11 +62,48 @@ runs:
           $modulename = "${{ inputs.module-name }}"
         }
 
-        if (-not "${{ inputs.module-uri }}") {
-          $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
+        $modulepath = ${{ inputs.module-path }}
+        $tempdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $modulename
+        $null = New-Item -Type Directory -Path $tempdir
+        $tempzip = Join-Path -Path $tempdir -ChildPath "$branch.zip"
+        $zip = Join-Path -Path $tempdir -ChildPath "$modulename.zip"
+
+        if (-not $modulepath) {
+          if (-not "${{ inputs.module-uri }}") {
+            $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
+          } else {
+            $moduleuri = "${{ inputs.module-uri }}"
+          }
+          $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
+
+          if ($IsLinux -or $IsMacos) {
+            Import-Module "${{ github.action_path }}/sample/archive.psm1"
+          }
+          Expand-Archive -Path $tempzip -DestinationPath $tempdir
+          # change directory to wherever it's at
+          Set-Location -Path (Get-ChildItem -Directory $tempdir).FullName
         } else {
-          $moduleuri = "${{ inputs.module-uri }}"
+          # Help them out in case they specified a psm1 or psd1
+          if ((Get-Item -Path $modulepath).PSIsContainer) {
+            Set-Location -Path $modulepath
+          } else {
+            Set-Location -Path (Split-Path $modulepath)
+          }
         }
+        Compress-Archive -Path . -DestinationPath $zip -Force
+
+        $gist = "temp for azure automation" | gh gist create --public
+        $gistid = Split-Path -path $gist -Leaf
+
+
+        git clone https://gist.github.com/$gistid.git
+
+        Copy-Item -Path $zip -Destination $gistid/
+        Set-Location -Path $gistid
+        git add (Split-Path -Path $zip -Leaf)
+        git commit -m "added from azure automation"
+        git push origin master
+
 
         $getparms = @{
           Name                  = $modulename
@@ -73,7 +113,6 @@ runs:
         }
 
         Get-AzAutomationModule @getparms -OutVariable moduleinstance
-
 
         if ($moduleinstance.ProvisioningState -eq "Creating") {
           Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
@@ -108,10 +147,11 @@ runs:
 
         # It sometimes takes a while...
         do {
-          Start-Sleep 3
+          Start-Sleep 5
+          Write-Output "Module import is in progress.."
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated")
 
-        # Finish and if it's anythig other than Available, the import was not successful
+        # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
         $state = $results.ProvisioningState
 
