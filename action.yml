@@ -92,15 +92,14 @@ runs:
           $parms.DefaultProfile = "${{ inputs.default-profile }}"
         }
 
-        if ("${{ inputs.module-version }}") {
-          $parms.ContentLinkVersion = "${{ inputs.module-version }}"
-        } else {
-          $parms.ContentLinkVersion = "2.0"
-        }
-
         if (-not $moduleinstance) {
           New-AzAutomationModule @parms
         } else {
+          if ("${{ inputs.module-version }}") {
+            $parms.ContentLinkVersion = "${{ inputs.module-version }}"
+          } else {
+            $parms.ContentLinkVersion = "2.0"
+          }
           Set-AzAutomationModule @parms
         }
 
