@@ -96,10 +96,10 @@ runs:
         $gistid = Split-Path -path $gist -Leaf
 
 
-        git config remote.origin.url "https://${{secrets.GITHUB_TOKEN}}@gist.github.com/$gistid.git"
+        git config remote.origin.url ('https://${{secrets.GITHUB_TOKEN}}@gist.github.com/' + "$gistid.git")
         git config user.name temp
         git config user.email temp@temp.com
-        git clone "https://${{secrets.GITHUB_TOKEN}}@gist.github.com/$gistid.git"
+        git clone ('https://${{secrets.GITHUB_TOKEN}}@gist.github.com/' + "$gistid.git")
 
 
         Copy-Item -Path $zip -Destination $gistid/
