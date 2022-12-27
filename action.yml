@@ -1,4 +1,4 @@
-name: "AzAutomationModule "
+name: "azautomodule"
 branding:
   icon: "terminal"
   color: "blue"
@@ -36,11 +36,12 @@ runs:
     - id: module
       shell: pwsh
       run: |
+        # First check to see if they've logged into Azure
         if (-not (Get-AzContext).Account) {
           throw "Please use the Azure Login GitHub Action to login first. See the azautomodule readme for details."
         }
 
-        # Import before verbose because implicit imports are so verbosey
+        # Explicit import before verbose because implicit imports are so noisy
         Import-Module Az.Automation
 
         if ("${{ inputs.verbose }}" -eq $true) {
@@ -48,7 +49,7 @@ runs:
         }
 
         $branch = $env:GITHUB_REF_NAME
-        $branch | Write-Output
+        Write-Output "Currently in branch: $branch"
         $resourcegroup = "${{ inputs.resource-group-name }}"
         $account = "${{ inputs.automation-account-name }}"
 
@@ -73,6 +74,7 @@ runs:
 
         Get-AzAutomationModule @getparms -OutVariable moduleinstance
 
+
         if ($moduleinstance.ProvisioningState -eq "Creating") {
           Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
           do {
@@ -93,6 +95,7 @@ runs:
         }
 
         if (-not $moduleinstance) {
+          $remove = $true
           New-AzAutomationModule @parms
         } else {
           if ("${{ inputs.module-version }}") {
@@ -103,11 +106,19 @@ runs:
           Set-AzAutomationModule @parms
         }
 
+        # It sometimes takes a while...
         do {
           Start-Sleep 3
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook")
 
+        # Finish and if it's anythig other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
-        if ($results.ProvisioningState -ne "Available") {
-          throw "Provisioning failed with status $($results.ProvisioningState)"
+        $state = $results.ProvisioningState
+
+        # If it was newly added
+        if ($remove) {
+          $null = $results | Remove-AzAutomationModule -Force
+        }
+        if ($state -ne "Available") {
+          throw "Provisioning failed with status $state"
         }
