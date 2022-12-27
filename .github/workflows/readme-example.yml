@@ -12,20 +12,12 @@ jobs:
       - name: Login via Az module
         uses: azure/login@v1
         with:
-          creds: |
-            '{
-                "clientId": "${{ secrets.CLIENT_ID }}",
-                "clientSecret": "${{ secrets.CLIENT_SECRET }}",
-                "subscriptionId": "${{ secrets.SUBSCRIPTION_ID }}",
-                "tenantId": "${{ secrets.TENANT_ID }}"
-            }'
+          creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
           enable-AzPSSession: true
 
       - name: Add the module
         uses: ./
         id: add
         with:
-          resource-group-name: tech.lgbt
-          automation-account-name: something
-        env:
-          ACCESS_TOKEN: "${{ secrets.ACCESS_TOKEN }}"
+          resource-group-name: azautomation
+          automation-account-name: import-tester
