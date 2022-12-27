@@ -70,7 +70,7 @@ runs:
           AutomationAccountName = $account
         }
 
-        $moduleinstance = Get-AzAutomationModule @getparms -ErrorAction Ignore
+        Get-AzAutomationModule @getparms -OutVariable moduleinstance -ErrorAction Ignore
 
         $parms = @{
           Name                  = $modulename
@@ -86,7 +86,7 @@ runs:
         if ("${{ inputs.module-version }}") {
           $parms.ContentLinkVersion = "${{ inputs.module-version }}"
         } else {
-          $parms.ContentLinkVersion = "1.0"
+          $parms.ContentLinkVersion = "2.0"
         }
 
         if (-not $moduleinstance) {
@@ -95,10 +95,11 @@ runs:
           Set-AzAutomationModule @parms
         }
 
-        while ((Get-AzAutomationModule @getparms).ProvisioningState -ne "Creating") {
-          Get-AzAutomationModule @getparms -OutVariable results
-          if ($results.ProvisioningState -eq "Failed") {
-            throw "Provisioning failed"
-          }
+        do {
           Start-Sleep 3
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
+
+        Get-AzAutomationModule @getparms -OutVariable results
+        if ($results.ProvisioningState -ne "Available") {
+          throw "Provisioning failed with status $($results.ProvisioningState)"
         }
