@@ -36,6 +36,8 @@ runs:
     - id: module
       shell: pwsh
       run: |
+        Import-Module Az.Automation
+
         if ("${{ inputs.verbose }}" -eq $true) {
           $VerbosePreference = "Continue"
         }
@@ -76,7 +78,7 @@ runs:
         }
 
         if (-not $moduleinstance) {
-          New-AzAutomationModule @parms -WhatIf
+          New-AzAutomationModule @parms
         } else {
-          Set-AzAutomationModule @parms -WhatIf
+          Set-AzAutomationModule @parms
         }
