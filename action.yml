@@ -117,9 +117,10 @@ runs:
           }
           # Copy the cleaned directory to a directory that will be zipped
           if ($IsLinux -or $IsMacos) {
-            cp -R * "$finalmoduledir/"
+            rsync -r --exclude '.git' . "$finalmoduledir/"
+            #cp -R * "$finalmoduledir/"
           } else {
-            Get-ChildItem -Path $pwd | Copy-Item -Recurse -Destination "$finalmoduledir/"
+            Get-ChildItem -Path $pwd -Exclude .git | Copy-Item -Recurse -Destination "$finalmoduledir/"
           }
         }
 
@@ -133,7 +134,7 @@ runs:
 
         # Upload to accessible web address. The portal uploads
         # to storage, we'll upload to gist.github.com
-        $gist = "temp for azure automation" | gh gist create
+        $gist = "temp for azautomodule upload to Azure Automation" | gh gist create
         $gistid = Split-Path -path $gist -Leaf
         gh gist clone $gistid
 
