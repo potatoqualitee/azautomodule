@@ -116,7 +116,7 @@ runs:
         Set-Location -Path $psd1directory
         Write-Verbose "Current directory: $pwd"
         Get-ChildItem -Recurse | Write-Warning
-        Compress-Archive -Path . -DestinationPath $zip -Force -ErrorAction Stop
+        Get-ChildItem -Recurse | Compress-Archive -DestinationPath $zip -Force -ErrorAction Stop
 
         # Upload to accessible web address. The portal uploads
         # to storage, we'll upload to gist.github.com
