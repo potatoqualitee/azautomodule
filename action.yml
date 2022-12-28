@@ -72,7 +72,7 @@ runs:
         $tempdir = Join-Path -Path $HOME -ChildPath $modulename
         New-Item -Type Directory -Path $tempdir | Write-Verbose
         $tempzip = Join-Path -Path $tempdir -ChildPath "$branch.zip"
-        $zip = Join-Path -Path $tempdir -ChildPath "$modulename.zip"
+        $zip = Join-Path -Path $tempdir -ChildPath "temp.zip"
 
         if (-not $modulepath) {
           Write-Verbose "Not modulepath"
@@ -114,30 +114,12 @@ runs:
         Set-Location -Path $gistid
         git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
         git config user.name "${{ github.actor }}"
-        git config user.email "${{ github.actor }}@temp.com"
+        git config user.email "${{ github.actor }}@users.noreply.github.com"
         git add (Split-Path -Path $zip -Leaf)
         git commit -m "added from azure automation"
         git push origin main
 
-        $parms = @{
-        Headers = @{
-          Accept                 = "application/vnd.github+json"
-          Authorization          = "Bearer $env:GITHUB_TOKEN"
-          "X-GitHub-Api-Version" = "2022-11-28"
-        }
-          Uri = "https://api.github.com/gists/$gistid"
-        }
-        Invoke-RestMethod @parms -OutVariable results
-        $results | ConvertFrom-Json
-        return
-        <#curl \
-        -H "Accept: application/vnd.github+json" \
-        -H "Authorization: Bearer <YOUR-TOKEN>"\
-        -H "X-GitHub-Api-Version: 2022-11-28" \
-        https://api.github.com/gists/GIST_ID
-        #>
-
-        return
+        $moduleurl = (gh api gists/$gistid | ConvertFrom-Json).files.'temp.zip'.raw_url
 
         $getparms = @{
           Name                  = $modulename
@@ -147,7 +129,7 @@ runs:
         }
 
         Get-AzAutomationModule @getparms -OutVariable moduleinstance
-
+return
         if ($moduleinstance.ProvisioningState -eq "Creating") {
           Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
           do {
@@ -160,7 +142,7 @@ runs:
           Name                  = $modulename
           ResourceGroupName     = $resourcegroup
           AutomationAccountName = $account
-          ContentLinkUri        = $moduleuri
+          ContentLinkUri        = $moduleurl
         }
 
         if ("${{ inputs.default-profile }}") {
