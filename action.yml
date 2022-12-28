@@ -136,7 +136,9 @@ runs:
         }
         Write-Verbose "Current directory: $pwd"
         Get-ChildItem -Recurse | Write-Warning
-        Get-ChildItem -Recurse | Compress-Archive -DestinationPath $zip -Force -ErrorAction Stop
+
+        [System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zip, 'Optimal', $false)
 
         # Upload to accessible web address. The portal uploads
         # to storage, we'll upload to gist.github.com
@@ -220,15 +222,9 @@ runs:
           gh gist delete $gistid | Write-Verbose
         }
 
-        if ($isLinux -or $IsMacOs) {
-          rm -rf $finalmoduledir
-          rm -rf $zip
-          rm -rf $tempzip
-        } else {
-          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force
-          Remove-Item -Path $zip -Force
-          Remove-Item -Path $tempzip -Force
-        }
+        Remove-Item -Path $zip -Force
+        Remove-Item -Path $tempzip -Force
+        Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force
 
         if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
