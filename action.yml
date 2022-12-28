@@ -38,6 +38,8 @@ runs:
         modules-to-cache: Az.Automation, Az.Accounts
     - id: module
       shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         $headers = @{
           Accept        = "application/vnd.github+json"
