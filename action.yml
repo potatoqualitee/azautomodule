@@ -59,6 +59,10 @@ runs:
           $VerbosePreference = "Continue"
         }
 
+        # some remove items and such need this
+        $PSDefaultParameterValues["*:Force"] = $true
+        $PSDefaultParameterValues["*:Recurse"] = $true
+
         if ("${{ inputs.debug }}" -eq $true) {
           # basically don't remove generated modules and gists
           # so that people can download and evaluate to see
@@ -214,7 +218,7 @@ runs:
         do {
           Start-Sleep 5
           Write-Verbose "Module import is in progress.."
-        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated")
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported")
 
         # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
@@ -229,10 +233,10 @@ runs:
           gh gist delete $gistid | Write-Verbose
         }
 
-        Remove-Item -Path $zip -Force -ErrorAction Ignore
-        Remove-Item -Path $tempzip -Force -ErrorAction Ignore
+        Remove-Item -Path $zip -ErrorAction Ignore
+        Remove-Item -Path $tempzip -ErrorAction Ignore
         try {
-          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force -ErrorAction Stop
+          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -ErrorAction Stop
         } catch {
           # don't care
         }
