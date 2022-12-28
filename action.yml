@@ -86,11 +86,11 @@ runs:
           Get-ChildItem -Path $tempzip | Write-Verbose
 
           if ($IsLinux -or $IsMacos) {
-            Import-Module "${{ github.action_path }}/tests/sample/archive.psm1"
-            sudo chmod -R 777 $tempdir
+            unzip $tempzip $tempdir
+          } else {
+            Expand-Archive -Path $tempzip -DestinationPath $tempdir -Force
           }
 
-          Expand-Archive -Path $tempzip -DestinationPath $tempdir -Force
           # change directory to wherever it's at
           Set-Location -Path $tempdir
         } else {
