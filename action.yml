@@ -88,7 +88,7 @@ runs:
 
         # Create the directory that'll be zipped and uploaded
         Write-Warning "Creating $finalmoduledir"
-        New-Item -Type Directory -Path $finalmoduledir
+        New-Item -Type Directory -Path $finalmoduledir | Select-Object FullName
 
         if (-not $modulepath) {
           Write-Verbose "Modulepath not specified, getting module URI one"
@@ -103,7 +103,7 @@ runs:
 
           Write-Warning "Unzipping $tempzip"
           if ($IsLinux -or $IsMacos) {
-            unzip $tempzip $finalmoduledir
+            unzip -o $tempzip -d $finalmoduledir
           } else {
             Expand-Archive -Path $tempzip -DestinationPath $finalmoduledir -Force
           }
@@ -174,6 +174,7 @@ runs:
         if ($moduleinstance.ProvisioningState -eq "Failed") {
             Write-Verbose "Module in failed state, removing to start fresh"
             $null = $moduleinstance | Remove-AzAutomationModule -Force
+            $moduleinstance = $null
         }
 
         $parms = @{
