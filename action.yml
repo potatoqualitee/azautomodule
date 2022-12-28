@@ -62,6 +62,7 @@ runs:
         # some remove items and such need this
         $PSDefaultParameterValues["*:Force"] = $true
         $PSDefaultParameterValues["*:Recurse"] = $true
+        $PSDefaultParameterValues["*:Confirm"] = $true
 
         if ("${{ inputs.debug }}" -eq $true) {
           # basically don't remove generated modules and gists
