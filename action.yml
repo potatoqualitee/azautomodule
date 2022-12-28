@@ -87,6 +87,7 @@ runs:
 
           if ($IsLinux -or $IsMacos) {
             Import-Module "${{ github.action_path }}/tests/sample/archive.psm1"
+            sudo chmod -R 775 $tempdir
           }
 
           Expand-Archive -Path $tempzip -DestinationPath $tempdir -Force
