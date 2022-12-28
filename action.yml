@@ -70,7 +70,7 @@ runs:
         Write-Verbose "Starting directory: $pwd"
         $modulepath = "${{ inputs.module-path }}"
         $tempdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $modulename
-        $null = New-Item -Type Directory -Path $tempdir
+        New-Item -Type Directory -Path $tempdir | Write-Verbose
         $tempzip = Join-Path -Path $tempdir -ChildPath "$branch.zip"
         $zip = Join-Path -Path $tempdir -ChildPath "$modulename.zip"
 
@@ -89,7 +89,7 @@ runs:
             Import-Module "${{ github.action_path }}/tests/sample/archive.psm1"
           }
 
-          Expand-Archive -Path $tempzip -DestinationPath $tempdir
+          Expand-Archive -Path $tempzip -DestinationPath $tempdir -Force
           # change directory to wherever it's at
           Set-Location -Path $tempdir
         } else {
