@@ -72,6 +72,9 @@ runs:
         $usertemp = [System.IO.Path]::GetTempPath()
         $tempzip = Join-Path -Path $usertemp -ChildPath "branch$branch.zip"
 
+        #ultimately what will be zipped
+        $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
+
         if (-not $modulepath) {
           Write-Verbose "Not modulepath"
           if (-not "${{ inputs.module-uri }}") {
@@ -85,17 +88,13 @@ runs:
           Get-ChildItem -Path $tempzip | Write-Verbose
 
           # Got the zip, now extract
-          $tempdir = Join-Path -Path $usertemp -ChildPath $modulename
-          New-Item -Type Directory -Path $tempdir | Write-Verbose
+          New-Item -Type Directory -Path $finalmoduledir | Write-Verbose
 
           if ($IsLinux -or $IsMacos) {
-            unzip $tempzip $tempdir
+            unzip $tempzip $finalmoduledir
           } else {
-            Expand-Archive -Path $tempzip -DestinationPath $tempdir -Force
+            Expand-Archive -Path $tempzip -DestinationPath $finalmoduledir -Force
           }
-
-          # change directory to wherever it's at
-          Set-Location -Path $tempdir
         } else {
           Write-Verbose "Found modulepath: $modulepath"
           # Help them out in case they specified a psm1 or psd1
@@ -104,12 +103,17 @@ runs:
           } else {
             Set-Location -Path (Split-Path $modulepath)
           }
+          if ($IsLinux -or $IsMacos) {
+            cp -R * "$finalmoduledir/"
+          } else {
+            Get-ChildItem -Path $pwd | Copy-Item -Recurse -Destination "$finalmoduledir/"
+          }
         }
 
         Write-Verbose "Current directory: $pwd"
         $zip = Join-Path -Path $usertemp -ChildPath temp.zip
-        $extract = Get-ChildItem -Path $pwd -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
-        Set-Location -Path $extract
+        $psd1directory = Get-ChildItem -Path $pwd -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
+        Set-Location -Path $psd1directory
         Write-Verbose "Current directory: $pwd"
         Get-ChildItem -Recurse | Write-Warning
         Compress-Archive -Path . -DestinationPath $zip -Force -ErrorAction Stop
