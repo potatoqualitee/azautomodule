@@ -39,8 +39,6 @@ runs:
 
     - id: module
       shell: pwsh
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
       run: |
         # First check to see if they've logged into Azure
         if (-not (Get-AzContext).Account) {
@@ -122,16 +120,17 @@ runs:
         git push origin main
 
         $parms = @{
-          Headers = @{
-            Accept                 = "application/vnd.github+json"
-            Authorization          = "Bearer $env:GITHUB_TOKEN"
-            "X-GitHub-Api-Version" = "2022-11-28"
-          }
-          Uri = "https://api.github.com/gists/$gistid"
-          Method = "GET"
+        Headers = @{
+          Accept                 = "application/vnd.github+json"
+          Authorization          = "Bearer $env:GITHUB_TOKEN"
+          "X-GitHub-Api-Version" = "2022-11-28"
         }
-        Invoke-RestMethod @parms
-        curl \
+          Uri = "https://api.github.com/gists/$gistid"
+        }
+        Invoke-RestMethod @parms -OutVariable results
+        $results | ConvertFrom-Json
+        return
+        <#curl \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer <YOUR-TOKEN>"\
         -H "X-GitHub-Api-Version: 2022-11-28" \
