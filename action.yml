@@ -52,6 +52,10 @@ runs:
         # Explicit import before verbose because implicit imports are so noisy
         Import-Module Az.Automation
 
+        if ($IsLinux -or $IsMacos) {
+          Import-Module "${{ github.action_path }}/sample/archive.psm1"
+        }
+
         if ("${{ inputs.verbose }}" -eq $true) {
           $VerbosePreference = "Continue"
         }
@@ -84,10 +88,6 @@ runs:
           Write-Verbose "Module Uri: $moduleuri"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
           Get-ChildItem -Path $tempzip | Write-Verbose
-
-          if ($IsLinux -or $IsMacos) {
-            Import-Module "${{ github.action_path }}/sample/archive.psm1"
-          }
 
           Expand-Archive -Path $tempzip -DestinationPath $tempdir
           # change directory to wherever it's at
