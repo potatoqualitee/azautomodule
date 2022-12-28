@@ -85,7 +85,7 @@ runs:
           Get-ChildItem -Path $tempzip | Write-Verbose
 
           # Got the zip, now extract
-          $tempdir = Join-Path -Path $temppath -ChildPath $modulename
+          $tempdir = Join-Path -Path $usertemp -ChildPath $modulename
           New-Item -Type Directory -Path $tempdir | Write-Verbose
 
           if ($IsLinux -or $IsMacos) {
