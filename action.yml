@@ -93,7 +93,15 @@ runs:
 
         # Create the directory that'll be zipped and uploaded
         Write-Verbose "Creating $finalmoduledir"
-        New-Item -Type Directory -Path $finalmoduledir -Force -ErrorAction Ignore | Select-Object FullName -ErrorAction Ignore
+        if ($IsLinux -or $IsMacOs) {
+          try {
+            mkdir $finalmoduledir
+          } catch {
+            # dont care
+          }
+        } else {
+          New-Item -Type Directory -Path $finalmoduledir -Force -Confirm:$false -ErrorAction Ignore | Select-Object FullName -ErrorAction Ignore
+        }
 
         if (-not $modulepath) {
           Write-Verbose "Modulepath not specified, getting module URI one"
