@@ -22,3 +22,4 @@ jobs:
         with:
           resource-group-name: azautomation
           automation-account-name: import-tester
+          module-name: archive
