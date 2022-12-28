@@ -1,6 +1,6 @@
 name: Add PowerShell module to Azure Automation
 on:
-  workflow_dispatch:
+  push:
 jobs:
   addmodule:
     runs-on: ubuntu-latest
