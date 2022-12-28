@@ -25,6 +25,7 @@ jobs:
           module-name: archive
 
       - name: Add the dbatools module
+        if: always()
         uses: ./
         id: dbatools
         env:

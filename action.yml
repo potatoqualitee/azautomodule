@@ -86,6 +86,10 @@ runs:
         # The directory where the module will be extracted to, cleaned then zipped
         $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
 
+        # Create the directory that'll be zipped and uploaded
+        Write-Warning "Creating $finalmoduledir"
+        New-Item -Type Directory -Path $finalmoduledir
+
         if (-not $modulepath) {
           Write-Verbose "Modulepath not specified, getting module URI one"
           if (-not "${{ inputs.module-uri }}") {
@@ -96,10 +100,6 @@ runs:
 
           Write-Verbose "Saving $moduleuri to $tempzip"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
-
-          # Got the zip, now extract
-          Write-Warning "Creating $finalmoduledir"
-          New-Item -Type Directory -Path $finalmoduledir
 
           Write-Warning "Unzipping $tempzip"
           if ($IsLinux -or $IsMacos) {
