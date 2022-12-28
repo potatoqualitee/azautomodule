@@ -57,7 +57,7 @@ runs:
         }
 
         $branch = $env:GITHUB_REF_NAME
-        Write-Output "Currently in branch: $branch"
+        Write-Verbose "Currently in branch: $branch"
         $resourcegroup = "${{ inputs.resource-group-name }}"
         $account = "${{ inputs.automation-account-name }}"
 
@@ -67,6 +67,7 @@ runs:
           $modulename = "${{ inputs.module-name }}"
         }
 
+        Write-Verbose "Starting directory: $pwd"
         $modulepath = ${{ inputs.module-path }}
         $tempdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $modulename
         $null = New-Item -Type Directory -Path $tempdir
@@ -79,14 +80,18 @@ runs:
           } else {
             $moduleuri = "${{ inputs.module-uri }}"
           }
+          Write-Verbose "Module Uri: $moduleuri"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
+          Get-ChildItem -Path $tempzip
 
           if ($IsLinux -or $IsMacos) {
             Import-Module "${{ github.action_path }}/sample/archive.psm1"
           }
+
           Expand-Archive -Path $tempzip -DestinationPath $tempdir
           # change directory to wherever it's at
-          Set-Location -Path (Get-ChildItem -Directory $tempdir).FullName
+          Set-Location -Path $tempdir
+          Write-Verbose "Current directory: $pwd"
         } else {
           # Help them out in case they specified a psm1 or psd1
           if ((Get-Item -Path $modulepath).PSIsContainer) {
@@ -159,7 +164,7 @@ runs:
         # It sometimes takes a while...
         do {
           Start-Sleep 5
-          Write-Output "Module import is in progress.."
+          Write-Verbose "Module import is in progress.."
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated")
 
         # Finish and if it's anything other than Available, the import was not successful
