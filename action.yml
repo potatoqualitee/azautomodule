@@ -245,7 +245,7 @@ runs:
         Remove-Item -Path $zip -ErrorAction Ignore
         Remove-Item -Path $tempzip -ErrorAction Ignore
         try {
-          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -ErrorAction Stop
+          Move-Item -Path $finalmoduledir -Destination "$finalmoduledir-$(New-Guid)" -ErrorAction Stop
         } catch {
           # don't care
         }
