@@ -5,7 +5,7 @@ branding:
 description: "Imports a PowerShell-based GitHub Repo module into Azure Automation"
 inputs:
   module-name:
-    description: "The name of the module that this action imports. Defaults to the repository name."
+    description: "The name of the module that this action imports. Defaults to the repository name. If the psm1 or psd1 module name does not match the repository name, the import will probably fail."
     required: false
   module-uri:
     description: "The url to a module zip package. Defaults to GitHub's branch zip."
@@ -27,8 +27,12 @@ inputs:
     required: false
   verbose:
     description: "Show verbose output. Defaults to true."
-    required: true
+    required: false
     default: "true"
+  debug:
+    description: "Don't delete generated gist or generated module in Azure Automation. False by default."
+    required: false
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -36,8 +40,7 @@ runs:
       uses: potatoqualitee/psmodulecache@v5.2
       with:
         modules-to-cache: Az.Automation, Az.Accounts
-
-    - id: module
+    - name: Attempt to import module in Azure Automation
       shell: pwsh
       run: |
         # First check to see if they've logged into Azure
@@ -56,6 +59,13 @@ runs:
           $VerbosePreference = "Continue"
         }
 
+        if ("${{ inputs.debug }}" -eq $true) {
+          # basically don't remove generated modules and gists
+          # so that people can download and evaluate to see
+          # whats going on
+          $debug = $true
+        }
+
         $branch = $env:GITHUB_REF_NAME
         Write-Verbose "Currently in branch: $branch"
         $resourcegroup = "${{ inputs.resource-group-name }}"
@@ -67,29 +77,31 @@ runs:
           $modulename = "${{ inputs.module-name }}"
         }
 
+        Write-Verbose "Determined module name: $modulename"
         Write-Verbose "Starting directory: $pwd"
         $modulepath = "${{ inputs.module-path }}"
         $usertemp = [System.IO.Path]::GetTempPath()
         $tempzip = Join-Path -Path $usertemp -ChildPath "branch$branch.zip"
 
-        #ultimately what will be zipped
+        # The directory where the module will be extracted to, cleaned then zipped
         $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
 
         if (-not $modulepath) {
-          Write-Verbose "Not modulepath"
+          Write-Verbose "Modulepath not specified, getting module URI one"
           if (-not "${{ inputs.module-uri }}") {
             $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
           } else {
             $moduleuri = "${{ inputs.module-uri }}"
           }
 
-          Write-Verbose "Module Uri: $moduleuri"
+          Write-Verbose "Saving $moduleuri to $tempzip"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
-          Get-ChildItem -Path $tempzip | Write-Verbose
 
           # Got the zip, now extract
-          New-Item -Type Directory -Path $finalmoduledir | Write-Verbose
+          Write-Warning "Creating $finalmoduledir"
+          New-Item -Type Directory -Path $finalmoduledir
 
+          Write-Warning "Unzipping $tempzip"
           if ($IsLinux -or $IsMacos) {
             unzip $tempzip $finalmoduledir
           } else {
@@ -103,6 +115,7 @@ runs:
           } else {
             Set-Location -Path (Split-Path $modulepath)
           }
+          # Copy the cleaned directory to a directory that will be zipped
           if ($IsLinux -or $IsMacos) {
             cp -R * "$finalmoduledir/"
           } else {
@@ -152,6 +165,11 @@ runs:
           } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
         }
 
+        if ($moduleinstance.ProvisioningState -eq "Failed") {
+            Write-Verbose "Module in failed state, removing to start fresh"
+            $null = $moduleinstance | Remove-AzAutomationModule -Force
+        }
+
         $parms = @{
           Name                  = $modulename
           ResourceGroupName     = $resourcegroup
@@ -186,10 +204,14 @@ runs:
         $state = $results.ProvisioningState
 
         # If it was newly added
-        if ($remove) {
+        if ($remove -and -not $debug) {
           $null = $results | Remove-AzAutomationModule -Force
         }
-        gh gist delete $gistid | Write-Verbose
+
+        if (-not $debug) {
+          gh gist delete $gistid | Write-Verbose
+        }
+
         if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
         }
