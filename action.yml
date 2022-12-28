@@ -224,7 +224,11 @@ runs:
 
         Remove-Item -Path $zip -Force -ErrorAction Ignore
         Remove-Item -Path $tempzip -Force -ErrorAction Ignore
-        Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force -ErrorAction Ignore
+        try {
+          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force -ErrorAction Stop
+        } catch {
+          # don't care
+        }
 
         if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
