@@ -93,7 +93,7 @@ runs:
 
         # Create the directory that'll be zipped and uploaded
         Write-Verbose "Creating $finalmoduledir"
-        New-Item -Type Directory -Path $finalmoduledir | Select-Object FullName
+        New-Item -Type Directory -Path $finalmoduledir -ErrorAction Ignore | Select-Object FullName -ErrorAction Ignore
 
         if (-not $modulepath) {
           Write-Verbose "Modulepath not specified, getting module URI one"
