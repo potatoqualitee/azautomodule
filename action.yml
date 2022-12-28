@@ -127,6 +127,7 @@ runs:
         Write-Verbose "Current directory: $pwd"
         $zip = Join-Path -Path $usertemp -ChildPath temp.zip
         Write-Verbose "Final module dir: $finalmoduledir"
+        Set-Location -Path $finalmoduledir
         $psd1directory = Get-ChildItem -Path $pwd -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
         if ($psd1directory) {
           Set-Location -Path $psd1directory
@@ -217,6 +218,16 @@ runs:
 
         if (-not $debug) {
           gh gist delete $gistid | Write-Verbose
+        }
+
+        if ($isLinux -or $IsMacOs) {
+          rm -rf $finalmoduledir
+          rm -rf $zip
+          rm -rf $tempzip
+        } else {
+          Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force
+          Remove-Item -Path $zip -Force
+          Remove-Item -Path $tempzip -Force
         }
 
         if ($state -notin "Available", "Succeeded") {
