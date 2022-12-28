@@ -17,8 +17,6 @@ jobs:
       - name: Add the module
         uses: ./
         id: add
-        env:
-          GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
         with:
           resource-group-name: azautomation
           automation-account-name: import-tester
