@@ -47,7 +47,7 @@ runs:
     - id: module
       shell: pwsh
       env:
-        GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
+        GITHUB_TOKEN: ${{ secret.GIST_PAT }}
       run: |
         # First check to see if they've logged into Azure
         if (-not (Get-AzContext).Account) {
