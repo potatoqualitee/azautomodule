@@ -126,7 +126,7 @@ runs:
 
         Write-Verbose "Current directory: $pwd"
         $zip = Join-Path -Path $usertemp -ChildPath temp.zip
-        $psd1directory = Get-ChildItem -Path $pwd -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
+        $psd1directory = Get-ChildItem -Path $finalmoduledir -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
         Set-Location -Path $psd1directory
         Write-Verbose "Current directory: $pwd"
         Get-ChildItem -Recurse | Write-Warning
@@ -134,7 +134,7 @@ runs:
 
         # Upload to accessible web address. The portal uploads
         # to storage, we'll upload to gist.github.com
-        $gist = "temp for azautomodule upload to Azure Automation" | gh gist create
+        $gist = "temp for azautomodule upload to Azure Automation for the $modulename module" | gh gist create
         $gistid = Split-Path -path $gist -Leaf
         gh gist clone $gistid
 
