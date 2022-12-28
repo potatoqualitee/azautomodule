@@ -143,7 +143,7 @@ runs:
         }
 
         Get-AzAutomationModule @getparms -OutVariable moduleinstance
-        return
+
         if ($moduleinstance.ProvisioningState -eq "Creating") {
           Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
           do {
