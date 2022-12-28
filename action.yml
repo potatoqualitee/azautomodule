@@ -11,7 +11,7 @@ inputs:
     description: "The url to a module zip package. Defaults to GitHub's branch zip."
     required: false
   module-path:
-    description: "If the module is somewhere in the local directory, use the path."
+    description: "If the module is somewhere in the local directory, use the path. This is relative to your repo directory or a file you've copied to the runner."
     required: false
   module-version:
     description: "Specifies the version of the module to which this action updates Automation. If no version is specified and it's required, the action will attempt to figure it out."
@@ -87,7 +87,7 @@ runs:
         $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
 
         # Create the directory that'll be zipped and uploaded
-        Write-Warning "Creating $finalmoduledir"
+        Write-Verbose "Creating $finalmoduledir"
         New-Item -Type Directory -Path $finalmoduledir | Select-Object FullName
 
         if (-not $modulepath) {
@@ -101,7 +101,7 @@ runs:
           Write-Verbose "Saving $moduleuri to $tempzip"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
 
-          Write-Warning "Unzipping $tempzip"
+          Write-Verbose "Unzipping $tempzip"
           if ($IsLinux -or $IsMacos) {
             unzip -o $tempzip -d $finalmoduledir
           } else {
@@ -109,6 +109,11 @@ runs:
           }
         } else {
           Write-Verbose "Found modulepath: $modulepath"
+          if (-not (Test-Path -Path $modulepath)) {
+            $temppath = Join-Path -Path $pwd -ChildPath $modulepath
+            $modulepath = Resolve-Path -Path $temppath -ErrorAction Stop
+          }
+
           # Help them out in case they specified a psm1 or psd1
           if ((Get-Item -Path $modulepath).PSIsContainer) {
             Set-Location -Path $modulepath
@@ -135,7 +140,6 @@ runs:
           Set-Location -Path $finalmoduledir
         }
         Write-Verbose "Current directory: $pwd"
-        Get-ChildItem -Recurse | Write-Warning
 
         [System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
         [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zip, 'Optimal', $false)
@@ -190,6 +194,9 @@ runs:
         if ("${{ inputs.default-profile }}") {
           $parms.DefaultProfile = "${{ inputs.default-profile }}"
         }
+
+        # one last check in case there was a cancel
+        $moduleinstance = Get-AzAutomationModule @getparms
 
         if (-not $moduleinstance) {
           $remove = $true
