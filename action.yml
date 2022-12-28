@@ -189,6 +189,6 @@ runs:
         if ($remove) {
           $null = $results | Remove-AzAutomationModule -Force
         }
-        if ($state -ne "Available") {
+        if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
         }
