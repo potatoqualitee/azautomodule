@@ -163,7 +163,7 @@ runs:
         $gistid = Split-Path -path $gist -Leaf
         gh gist clone $gistid
 
-        Copy-Item -Path $zip -Destination $gistid/
+        Copy-Item -Path $zip -Destination "$gistid/"
         Set-Location -Path $gistid
         git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
         git config user.name "${{ github.actor }}"
