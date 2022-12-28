@@ -23,3 +23,15 @@ jobs:
           resource-group-name: azautomation
           automation-account-name: import-tester
           module-name: archive
+
+      - name: Add the dbatools module
+        uses: ./
+        id: dbatools
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
+        with:
+          resource-group-name: azautomation
+          automation-account-name: import-tester
+          module-uri: https://github.com/dataplat/dbatools/archive/refs/heads/development.zip
+          module-name: dbatools
+          debug: true
