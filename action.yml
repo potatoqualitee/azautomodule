@@ -68,7 +68,7 @@ runs:
         }
 
         Write-Verbose "Starting directory: $pwd"
-        $modulepath = ${{ inputs.module-path }}
+        $modulepath = "${{ inputs.module-path }}"
         $tempdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $modulename
         $null = New-Item -Type Directory -Path $tempdir
         $tempzip = Join-Path -Path $tempdir -ChildPath "$branch.zip"
