@@ -15,7 +15,7 @@ jobs:
           enable-AzPSSession: true
 
       - name: Add the module
-        uses: ./
+        uses: potatoqualitee/azautomodule@unzip
         id: add
         env:
           GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
