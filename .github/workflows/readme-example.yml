@@ -38,7 +38,6 @@ jobs:
 
       - name: Add the repo module by file name
         uses: ./
-        id: addpath
         env:
           GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
         with:
