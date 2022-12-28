@@ -107,15 +107,13 @@ runs:
 
         $gist = "temp for azure automation" | gh gist create --public
         $gistid = Split-Path -path $gist -Leaf
-
-
-        git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
-        git config user.name temp
-        git config user.email temp@temp.com
         git clone "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
         #github.actor
         Copy-Item -Path $zip -Destination $gistid/
         Set-Location -Path $gistid
+        git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor }}@temp.com"
         git add (Split-Path -Path $zip -Leaf)
         git commit -m "added from azure automation"
         git push origin main
