@@ -32,10 +32,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install and cache PowerShell modules
-      uses: potatoqualitee/psmodulecache@v5.2
-      with:
-        modules-to-cache: Az.Automation, Az.Accounts
     - id: module
       shell: pwsh
       env:
@@ -43,8 +39,9 @@ runs:
       run: |
         $headers = @{
           Accept        = "application/vnd.github+json"
-          Authorization = "token $env:GITHUB_TOKEN"
+          Authorization = "Bearer $env:GITHUB_TOKEN"
         }
+        $headers.Authorization | Write-Warning
 
         $parms = @{
           Uri = "https://api.github.com/gists"
