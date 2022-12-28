@@ -75,6 +75,7 @@ runs:
         $zip = Join-Path -Path $tempdir -ChildPath "$modulename.zip"
 
         if (-not $modulepath) {
+          Write-Verbose "Not modulepath"
           if (-not "${{ inputs.module-uri }}") {
             $moduleuri = "https://github.com/$env:GITHUB_REPOSITORY/archive/refs/heads/$branch.zip"
           } else {
@@ -82,7 +83,7 @@ runs:
           }
           Write-Verbose "Module Uri: $moduleuri"
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
-          Get-ChildItem -Path $tempzip
+          Get-ChildItem -Path $tempzip | Write-Verbose
 
           if ($IsLinux -or $IsMacos) {
             Import-Module "${{ github.action_path }}/sample/archive.psm1"
@@ -91,8 +92,8 @@ runs:
           Expand-Archive -Path $tempzip -DestinationPath $tempdir
           # change directory to wherever it's at
           Set-Location -Path $tempdir
-          Write-Verbose "Current directory: $pwd"
         } else {
+          Write-Verbose "Found modulepath: $modulepath"
           # Help them out in case they specified a psm1 or psd1
           if ((Get-Item -Path $modulepath).PSIsContainer) {
             Set-Location -Path $modulepath
@@ -100,8 +101,7 @@ runs:
             Set-Location -Path (Split-Path $modulepath)
           }
         }
-        $pwd | Write-Warning
-        Get-ChildItem -Path . | Write-Warning
+        Write-Verbose "Current directory: $pwd"
         Compress-Archive -Path . -DestinationPath $zip -Force -ErrorAction Stop
 
         $gist = "temp for azure automation" | gh gist create --public
