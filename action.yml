@@ -102,16 +102,17 @@ runs:
             Set-Location -Path (Split-Path $modulepath)
           }
         }
+
         Write-Verbose "Current directory: $pwd"
         Compress-Archive -Path . -DestinationPath $zip -Force -ErrorAction Stop
 
         $gist = "temp for azure automation" | gh gist create --public
         $gistid = Split-Path -path $gist -Leaf
-        git clone "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
-        #github.actor
+        gh gist clone $gistid
+
         Copy-Item -Path $zip -Destination $gistid/
         Set-Location -Path $gistid
-        git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
+        #git config remote.origin.url "https://$env:GITHUB_TOKEN@gist.github.com/$gistid.git"
         git config user.name "${{ github.actor }}"
         git config user.email "${{ github.actor }}@temp.com"
         git add (Split-Path -Path $zip -Leaf)
