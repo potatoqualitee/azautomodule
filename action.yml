@@ -222,9 +222,9 @@ runs:
           gh gist delete $gistid | Write-Verbose
         }
 
-        Remove-Item -Path $zip -Force
-        Remove-Item -Path $tempzip -Force
-        Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force
+        Remove-Item -Path $zip -Force -ErrorAction Ignore
+        Remove-Item -Path $tempzip -Force -ErrorAction Ignore
+        Get-ChildItem -Path $finalmoduledir -Recurse | Remove-Item -Force -ErrorAction Ignore
 
         if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
