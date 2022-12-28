@@ -189,6 +189,7 @@ runs:
         if ($remove) {
           $null = $results | Remove-AzAutomationModule -Force
         }
+        gh gist delete $gistid | Write-Verbose
         if ($state -notin "Available", "Succeeded") {
           throw "Provisioning failed with status $state"
         }
