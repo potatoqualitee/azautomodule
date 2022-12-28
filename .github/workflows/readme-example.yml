@@ -14,7 +14,7 @@ jobs:
           creds: ${{ secrets.AZ_CREDENTIAL }}
           enable-AzPSSession: true
 
-      - name: Add the module
+      - name: Add the repo module
         uses: ./
         id: add
         env:

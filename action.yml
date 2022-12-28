@@ -126,8 +126,13 @@ runs:
 
         Write-Verbose "Current directory: $pwd"
         $zip = Join-Path -Path $usertemp -ChildPath temp.zip
-        $psd1directory = Get-ChildItem -Path $finalmoduledir -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
-        Set-Location -Path $psd1directory
+        Write-Verbose "Final module dir: $finalmoduledir"
+        $psd1directory = Get-ChildItem -Path $pwd -Recurse | Where-Object Extension -match ".psm1|.psd1" | Select-Object -First 1 -ExpandProperty DirectoryName
+        if ($psd1directory) {
+          Set-Location -Path $psd1directory
+        } else {
+          Set-Location -Path $finalmoduledir
+        }
         Write-Verbose "Current directory: $pwd"
         Get-ChildItem -Recurse | Write-Warning
         Get-ChildItem -Recurse | Compress-Archive -DestinationPath $zip -Force -ErrorAction Stop

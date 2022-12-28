@@ -21,3 +21,6 @@ The command finishes whether the import succeeds or fails.
 To check whether it succeeded, run the following command:
 `PS C:\\\> $ModuleInstance = Get-AzAutomationModule -Name `ModuleName
 Check the **ProvisioningState** property for a value of Succeeded.
+
+https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+https://github.com/settings/tokens/new
