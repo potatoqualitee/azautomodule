@@ -304,7 +304,7 @@ runs:
 
         # Remove it unless you don't
         if (-not $debug -and -not $justadd) {
-          $null = $results | Remove-AzAutomationModule -Force
+          $null = $results | Remove-AzAutomationModule -Force -ErrorAction Ignore
         }
 
         if (-not $debug) {
