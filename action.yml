@@ -277,7 +277,26 @@ runs:
           Start-Sleep 5
           Write-Verbose "Module import is in progress, current state: $((Get-AzAutomationModule @getparms).ProvisioningState)"
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed")
-        # Other types: "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported"
+        # Other types: https://learn.microsoft.com/it-it/javascript/api/@azure/arm-automation/moduleprovisioningstate
+        <#
+        type ModuleProvisioningState =
+          | "Created"
+          | "Creating"
+          | "StartingImportModuleRunbook"
+          | "RunningImportModuleRunbook"
+          | "ContentRetrieved"
+          | "ContentDownloaded"
+          | "ContentValidated"
+          | "ConnectionTypeImported"
+          | "ContentStored"
+          | "ModuleDataStored"
+          | "ActivitiesStored"
+          | "ModuleImportRunbookComplete"
+          | "Succeeded"
+          | "Failed"
+          | "Cancelled"
+          | "Updating"
+        #>
 
         # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
