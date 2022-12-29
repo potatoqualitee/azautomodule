@@ -68,6 +68,9 @@ runs:
         # Explicit import before verbose because implicit imports are so noisy
         Import-Module Az.Automation
 
+        # Load up an assembly that'll be used later
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+
         if ("${{ inputs.verbose }}" -eq $true) {
           $VerbosePreference = "Continue"
         }
@@ -156,11 +159,7 @@ runs:
           $null = Invoke-WebRequest -Uri $moduleuri -OutFile $tempzip -ErrorAction Stop
 
           Write-Verbose "Unzipping $tempzip"
-          if ($IsLinux -or $IsMacos) {
-            $null = unzip -o $tempzip -d $finalmoduledir
-          } else {
-            $null = Expand-Archive -Path $tempzip -DestinationPath $finalmoduledir -Force
-          }
+          $null = [System.IO.Compression.ZipFile]::ExtractToDirectory($tempzip, $finalmoduledir, $true)
         } else {
           Write-Verbose "Found modulepath: $modulepath"
           if (-not (Test-Path -Path $modulepath)) {
@@ -201,7 +200,6 @@ runs:
           Remove-Item -Path $zip
         }
 
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zip, 'Optimal', $false)
 
         # Upload to accessible web address. The portal uploads
