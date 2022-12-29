@@ -36,7 +36,7 @@ jobs:
           module-uri: https://github.com/dataplat/dbatools/archive/refs/heads/development.zip
           module-name: dbatools
 
-      - name: Add the repo module by file name
+      - name: Add the repo module by relative file name
         if: always()
         uses: ./
         env:
@@ -45,4 +45,15 @@ jobs:
           resource-group-name: azautomation
           automation-account-name: import-tester
           module-name: archive
-          module-path: realtion
+          module-path: ./tests/sample/archive.psm1
+
+      - name: Add the repo module by absolute file name
+        if: always()
+        uses: ./
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
+        with:
+          resource-group-name: azautomation
+          automation-account-name: import-tester
+          module-name: archive
+          module-path: /home/runner/work/azautomodule/azautomodule/tests/sample
