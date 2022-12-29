@@ -60,6 +60,7 @@ runs:
           throw "Please use the Azure Login GitHub Action to login first. See the azautomodule readme for details."
         }
 
+        # The PAT is needed to temporarily upload the module to a gist. This gist will be deleted once the action is complete.
         if (-not $env:GITHUB_TOKEN) {
           throw "Please set a GITHUB_TOKEN environmental variable using a PAT. See the azautomodule readme for details."
         }
@@ -123,6 +124,7 @@ runs:
             # don't care
           }
         }
+
         Write-Verbose "Creating $finalmoduledir"
         if ($IsLinux -or $IsMacOs) {
           try {
@@ -131,7 +133,10 @@ runs:
             # dont care
           }
         } else {
-          New-Item -Type Directory -Path $finalmoduledir -Force -Confirm:$false -ErrorAction Ignore | Select-Object FullName -ErrorAction Ignore
+          $newdir = New-Item -Type Directory -Path $finalmoduledir -Force -Confirm:$false -ErrorAction Ignore
+          if ($newdir) {
+            $newdir | Select-Object FullName -ErrorAction Ignore
+          }
         }
 
         if (-not $modulepath) {
@@ -164,12 +169,14 @@ runs:
           } else {
             Set-Location -Path (Split-Path $modulepath)
           }
-          # Copy the cleaned directory to a directory that will be zipped
+
+          # Copy the cleaned directory (a directory that is importable to
+          # AZ Automation) to a directory that will be zipped
           if ($IsLinux -or $IsMacos) {
             rsync -r --exclude '.git' . "$finalmoduledir/"
             #cp -R * "$finalmoduledir/"
           } else {
-            Get-ChildItem -Path $pwd -Exclude .git | Copy-Item -Recurse -Destination "$finalmoduledir/"
+            $null = Get-ChildItem -Path $pwd -Exclude .git | Copy-Item -Recurse -Destination "$finalmoduledir/"
           }
         }
 
@@ -226,6 +233,8 @@ runs:
           } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
         }
 
+        # Delete stuff first because if you don't it can run infinitely
+        # But forceupdate gives people the change to roll the dice
         if ($moduleinstance.ProvisioningState -eq "Failed" -and -not $forceupdate) {
             Write-Verbose "Module in failed state, removing to start fresh"
             $null = $moduleinstance | Remove-AzAutomationModule -Force
@@ -260,7 +269,6 @@ runs:
           }
           Set-AzAutomationModule @parms
         } else {
-          $remove = $true
           New-AzAutomationModule @parms
         }
 
@@ -269,14 +277,14 @@ runs:
           Start-Sleep 5
           Write-Verbose "Module import is in progress, current state: $((Get-AzAutomationModule @getparms).ProvisioningState)"
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed")
-        # "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported"
+        # Other types: "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported"
 
         # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
         $state = $results.ProvisioningState
 
-        # If it was newly added
-        if ($remove -and -not $debug -and -not $justadd) {
+        # Remove it unless you don't
+        if (-not $debug -and -not $justadd) {
           $null = $results | Remove-AzAutomationModule -Force
         }
 
@@ -296,7 +304,7 @@ runs:
           throw "Provisioning failed with status $state"
         }
 
-        if ($state -notin "Available", "Succeeded" -and $justadd) {
+        if ($state -notin "Available", "Succeeded") {
           Write-Warning "Provisioning appears to have failed with status $state"
         } else {
           Write-Output "Success!"
