@@ -281,7 +281,7 @@ runs:
         do {
           Start-Sleep 5
           Write-Verbose "Module import is in progress, current state: $((Get-AzAutomationModule @getparms).ProvisioningState)"
-        } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed")
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed", $null)
         # Other types: https://learn.microsoft.com/it-it/javascript/api/@azure/arm-automation/moduleprovisioningstate
         <#
         type ModuleProvisioningState =
