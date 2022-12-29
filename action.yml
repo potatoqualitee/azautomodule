@@ -116,6 +116,13 @@ runs:
         $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
 
         # Create the directory that'll be zipped and uploaded
+        if ((Test-Path -Path $finalmoduledir)) {
+          try {
+            Move-Item -Path $finalmoduledir -Destination "$finalmoduledir-$(New-Guid)" -ErrorAction Stop
+          } catch {
+            # don't care
+          }
+        }
         Write-Verbose "Creating $finalmoduledir"
         if ($IsLinux -or $IsMacOs) {
           try {
@@ -260,8 +267,9 @@ runs:
         # It sometimes takes a while...
         do {
           Start-Sleep 5
-          Write-Verbose "Module import is in progress.."
-        } while ((Get-AzAutomationModule @getparms).ProvisioningState -in "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported")
+          Write-Verbose "Module import is in progress, current state: $((Get-AzAutomationModule @getparms).ProvisioningState)"
+        } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed")
+        # "Creating", "RunningImportModuleRunbook", "ContentValidated", "ConnectionTypeImported"
 
         # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
