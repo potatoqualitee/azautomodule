@@ -276,9 +276,11 @@ runs:
         }
 
         # It sometimes takes a while...
+        $provisionstate = $null
         do {
           Start-Sleep 5
-          Write-Verbose "Module import is in progress, current state: $((Get-AzAutomationModule @getparms).ProvisioningState)"
+          $provisionstate = (Get-AzAutomationModule @getparms).ProvisioningState
+          Write-Verbose "Module import is in progress, current state: $provisionstate"
         } while ((Get-AzAutomationModule @getparms).ProvisioningState -notin "Available", "Succeeded", "Failed", $null)
         # Other types: https://learn.microsoft.com/it-it/javascript/api/@azure/arm-automation/moduleprovisioningstate
         <#
@@ -304,6 +306,10 @@ runs:
         # Finish and if it's anything other than Available, the import was not successful
         Get-AzAutomationModule @getparms -OutVariable results
         $state = $results.ProvisioningState
+        # sometimes it's empty
+        if (-not $provisionstate) {
+          $state = $provisionstate
+        }
 
         # Remove it unless you don't
         if (-not $debug -and -not $justadd) {
