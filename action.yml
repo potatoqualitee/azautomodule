@@ -25,6 +25,18 @@ inputs:
   default-profile:
     description: "The credentials, account, tenant, and subscription used for communication with Azure."
     required: false
+  only-add:
+    description: "Just add the module, don't delete it when done or even care about its state."
+    required: false
+    default: "false"
+  force:
+    description: "If any module exists, it will be deleted when force is set to true."
+    required: false
+    default: "false"
+  force-update:
+    description: "When forceupdate is set to true, if any module exists, it will be updated instead of deleted and recreated. Note that Azure Autmation is bad at this and sometimes it runs literally forever. It's much faster to delete and recreate."
+    required: false
+    default: "false"
   verbose:
     description: "Show verbose output. Defaults to true."
     required: false
@@ -69,6 +81,18 @@ runs:
           # so that people can download and evaluate to see
           # whats going on
           $debug = $true
+        }
+
+        if ("${{ inputs.force }}" -eq $true) {
+          $force = $true
+        }
+
+        if ("${{ inputs.just-add }}" -eq $true) {
+          $justadd = $true
+        }
+
+        if ("${{ inputs.force-update }}" -eq $true) {
+          $forceupdate = $true
         }
 
         $branch = $env:GITHUB_REF_NAME
@@ -116,9 +140,9 @@ runs:
 
           Write-Verbose "Unzipping $tempzip"
           if ($IsLinux -or $IsMacos) {
-            unzip -o $tempzip -d $finalmoduledir
+            $null = unzip -o $tempzip -d $finalmoduledir
           } else {
-            Expand-Archive -Path $tempzip -DestinationPath $finalmoduledir -Force
+            $null = Expand-Archive -Path $tempzip -DestinationPath $finalmoduledir -Force
           }
         } else {
           Write-Verbose "Found modulepath: $modulepath"
@@ -154,7 +178,11 @@ runs:
         }
         Write-Verbose "Current directory: $pwd"
 
-        [System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+        if ((Test-Path -Path $zip)) {
+          Remove-Item -Path $zip
+        }
+
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zip, 'Optimal', $false)
 
         # Upload to accessible web address. The portal uploads
@@ -183,7 +211,7 @@ runs:
 
         Get-AzAutomationModule @getparms -OutVariable moduleinstance
 
-        if ($moduleinstance.ProvisioningState -eq "Creating") {
+        if ($moduleinstance.ProvisioningState -eq "Creating" -and $forceupdate) {
           Write-Warning "The $modulename module is still importing into Azure Automation. Waiting until it's finished before moving on..."
           do {
             Start-Sleep 3
@@ -191,8 +219,14 @@ runs:
           } while ((Get-AzAutomationModule @getparms).ProvisioningState -eq "Creating")
         }
 
-        if ($moduleinstance.ProvisioningState -eq "Failed") {
+        if ($moduleinstance.ProvisioningState -eq "Failed" -and -not $forceupdate) {
             Write-Verbose "Module in failed state, removing to start fresh"
+            $null = $moduleinstance | Remove-AzAutomationModule -Force
+            $moduleinstance = $null
+        }
+
+        if ($force -and $moduleinstance -and -not $forceupdate) {
+            Write-Verbose "Module exists, deleting and starting fresh"
             $null = $moduleinstance | Remove-AzAutomationModule -Force
             $moduleinstance = $null
         }
@@ -211,16 +245,16 @@ runs:
         # one last check in case there was a cancel
         $moduleinstance = Get-AzAutomationModule @getparms
 
-        if (-not $moduleinstance) {
-          $remove = $true
-          New-AzAutomationModule @parms
-        } else {
+        if ($forceupdate) {
           if ("${{ inputs.module-version }}") {
             $parms.ContentLinkVersion = "${{ inputs.module-version }}"
           } else {
             $parms.ContentLinkVersion = "2.0"
           }
           Set-AzAutomationModule @parms
+        } else {
+          $remove = $true
+          New-AzAutomationModule @parms
         }
 
         # It sometimes takes a while...
@@ -234,7 +268,7 @@ runs:
         $state = $results.ProvisioningState
 
         # If it was newly added
-        if ($remove -and -not $debug) {
+        if ($remove -and -not $debug -and -not $justadd) {
           $null = $results | Remove-AzAutomationModule -Force
         }
 
@@ -250,6 +284,12 @@ runs:
           # don't care
         }
 
-        if ($state -notin "Available", "Succeeded") {
+        if ($state -notin "Available", "Succeeded" -and -not $justadd) {
           throw "Provisioning failed with status $state"
+        }
+
+        if ($state $state -notin "Available", "Succeeded" -and $justadd) {
+          Write-Warning "Provisioning appears to have failed with status $state"
+        } else {
+          Write-Output "Success!"
         }
