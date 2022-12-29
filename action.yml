@@ -96,7 +96,12 @@ runs:
           $forceupdate = $true
         }
 
-        $branch = $env:GITHUB_REF_NAME
+        # pull request
+        $branch = $env:GITHUB_HEAD_REF
+        if (-not $branch) {
+          # push
+          $branch = $env:GITHUB_REF_NAME
+        }
         Write-Verbose "Currently in branch: $branch"
         $resourcegroup = "${{ inputs.resource-group-name }}"
         $account = "${{ inputs.automation-account-name }}"
