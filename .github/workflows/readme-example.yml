@@ -37,6 +37,7 @@ jobs:
           module-name: dbatools
 
       - name: Add the repo module by file name
+        if: always()
         uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GIST_PAT }}

@@ -288,7 +288,7 @@ runs:
           throw "Provisioning failed with status $state"
         }
 
-        if ($state $state -notin "Available", "Succeeded" -and $justadd) {
+        if ($state -notin "Available", "Succeeded" -and $justadd) {
           Write-Warning "Provisioning appears to have failed with status $state"
         } else {
           Write-Output "Success!"
