@@ -116,7 +116,7 @@ runs:
         Write-Verbose "Starting directory: $pwd"
         $modulepath = "${{ inputs.module-path }}"
         $usertemp = [System.IO.Path]::GetTempPath()
-        $tempzip = Join-Path -Path $usertemp -ChildPath "branch$branch.zip"
+        $tempzip = Join-Path -Path $usertemp -ChildPath "branch$branch.zip".Replace("/","")
 
         # The directory where the module will be extracted to, cleaned then zipped
         $finalmoduledir = Join-Path -Path $usertemp -ChildPath $modulename
